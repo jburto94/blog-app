@@ -124,4 +124,27 @@ describe('deletion of a blog', () => {
   })
 })
 
+describe('updating of a blog', () => {
+  test(`succeeds with 200 if id is valid`, async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+
+    const updatedInfo = {
+      ...blogToUpdate,
+      title: "First!!! (updated)",
+      likes: 78
+    }
+
+    await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedInfo)
+      .expect(200)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    const updatedBlog = blogsAtEnd[0]
+    expect(updatedBlog.title).toEqual('First!!! (updated)')
+    expect(updatedInfo.url).toEqual('github.io')
+  })
+})
+
 afterAll(() => mongoose.connection.close())
