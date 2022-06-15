@@ -24,4 +24,11 @@ blogsRouter.post('/', async (request, response) => {
   }
 })
 
+blogsRouter.get('/:id', async (request, response, next) => {
+  const blog = await Blog.findById(request.params.id)
+  blog
+    ? response.json(blog)
+    : response.status(404).end()
+})
+
 module.exports = blogsRouter
