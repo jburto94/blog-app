@@ -7,7 +7,7 @@ userRouter.get('/', async (request, response) => {
   response.json(users)
 })
 
-userRouter.post('/', asynce (request, reponse) => {
+userRouter.post('/', async (request, reponse) => {
   const { username, name, password } = request.body
 
   const saltRounds = 10
