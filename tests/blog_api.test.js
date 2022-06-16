@@ -53,6 +53,14 @@ describe('when viewing a specific blog', () => {
       .get(`/api/blogs/${validNonExistingBlogId}`)
       .expect(404)
   })
+
+  test('fails with statuscode 404 if id is valid, but blog does not exist', async() => {
+    const validNonExistingBlogId = await helper.nonExistingId()
+
+    await api
+      .get(`/api/blogs/${validNonExistingBlogId}`)
+      .expect(404)
+  })
 })
 
 describe('additon of a new blog', () => {
