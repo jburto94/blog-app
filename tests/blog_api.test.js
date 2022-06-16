@@ -1,9 +1,12 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt')
 const helper = require('./test_helper')
 const app = require('../app')
 const api = supertest(app)
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 beforeEach(async () => {
   await Blog.deleteMany({})
@@ -64,6 +67,25 @@ describe('when viewing a specific blog', () => {
 })
 
 describe('additon of a new blog', () => {
+  beforeEach(async () => {
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('password', 10)
+    const user = new User({ username: 'test', name: 'test', password: passwordHash })
+
+    await user.save()
+
+    const userForToken = {
+        username: user.username,
+        id: user.id,
+    }
+
+    token = jwt.sign(userForToken, process.env.SECRET)
+    await Blog.deleteMany({})
+    blogs = helper.initialBlogs.map(blog => new Blog({ ...blog, user: user.id }))
+    await Blog.insertMany(helper.initialBlogs)
+  })
+
   test('succeeds with valid data', async () => {
     const newBlog = {
       title: 'New Blog!!!',
@@ -74,6 +96,7 @@ describe('additon of a new blog', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -94,6 +117,7 @@ describe('additon of a new blog', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `bearer ${token}`)
       .send(newBlog)
 
     blogsAtEnd = await helper.blogsInDb()
@@ -111,24 +135,46 @@ describe('additon of a new blog', () => {
     await api
       .post('/api/blogs')
       .send(newBlog)
+      .set('Authorization', `bearer ${token}`)
       .expect(400)
   })
 })
 
 describe('deletion of a blog', () => {
+  beforeEach(async () => {
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('password', 10)
+    const user = new User({ username: 'test', name: 'test', password: passwordHash })
+
+    await user.save()
+
+    const userForToken = {
+        username: user.username,
+        id: user.id,
+    }
+
+    token = jwt.sign(userForToken, process.env.SECRET)
+    await Blog.deleteMany({})
+    blogs = helper.initialBlogs.map(blog => new Blog({ ...blog, user: user.id }))
+    await Blog.insertMany(helper.initialBlogs)
+  })
+
   test('succeeds with 204 if id is valid', async () => {
-    const blogsAtStart = await helper.blogsInDb()
-    const blogToDelete = blogsAtStart[0]
+    const newBlog = {
+      title: 'gone soon',
+      url: '404.com'
+    }
+
+    const blogToDelete = await api
+      .post('/api/blogs')
+      .set('Authorization', `bearer ${token}`)
+      .send(newBlog)
 
     await api
-      .delete(`/api/blogs/${blogToDelete.id}`)
+      .delete(`/api/blogs/${blogToDelete.body.id}`)
+      .set('Authorization', `bearer ${token}`)
       .expect(204)
-
-    const blogsAtEnd = await helper.blogsInDb()
-    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
-
-    const titles = blogsAtEnd.map(b => b.titles)
-    expect(titles).not.toContain(blogToDelete.title)
   })
 })
 

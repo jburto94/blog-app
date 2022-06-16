@@ -39,8 +39,6 @@ describe('when there is initially user data in the db', () => {
   })
 
   test('creation fails with statuscode 400 when username already exists', async () => {
-    const usersAtStart = await helper.usersInDb()
-
     const newUser = {
       username: 'root',
       name: 'john',
