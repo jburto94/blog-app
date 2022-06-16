@@ -43,6 +43,16 @@ blogsRouter.get('/:id', async (request, response, next) => {
 })
 
 blogsRouter.delete('/:id', async (request, response, next) => {
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+  const blog = await Blog.findById(request.params.id)
+    .populate('user', { username: 1, name: 1 })
+
+  if (decodedToken.id !== blog.user[0].id) {
+    return response.status(401).json({
+      error: 'you cannot delete a blog you do not own'
+    })
+  }
+
   await Blog.findByIdAndRemove(request.params.id)
   response.status(204).end()
 })
